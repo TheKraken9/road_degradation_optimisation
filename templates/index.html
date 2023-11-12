@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+    integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+    crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+    integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+    crossorigin=""></script>
+    <link rel="stylesheet" href="{{url_for('static', filename='bootstrap/css/bootstrap.min.css')}}">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/index.css')}}">
+    <title>Listes des routes</title>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-6">
+                <h1>Listes des routes :</h1>
+                <p>Les routes present ici ont des degradations.</p>
+                <form action="/" method="POST">
+                    <select name="idRoute" id="" class="form-select">
+                        {% for route in listes: %}
+                        <option value="{{route.get_id_route()}}">{{route.get_roadno()}} : {{route.get_linkno()}}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="submit" value="Voir plus" class="btn btn-info my-4">
+                </form>
+                {% if road != None :%}
+                    <h2>Détail de degradation</h2>
+                    <ul>
+                        <li>Route numero : {{road.get_roadno()}}</li>
+                        <li>Detail : {{road.get_linkno()}}</li>
+                        <li>Longueur : {{road.get_longueur()}} Km</li>
+                        <li>Largeur : {{road.get_largeur()}} m</li>
+                        <li>pk debut : {{road.get_start_km()}}</li>
+                        <li>pk debut : {{road.get_end_km()}}</li>
+                    </ul>
+                    <p>Prix de revient du reparation : {{road.get_reparation_price()}} Euro</p>
+                    <p>Temps du reparation : {{road.get_reparation_duration()}} H</p>
+                    <div>
+                        <h3>Detail des reparations</h3>
+                        <ul>
+                            {% for degat in road.get_degradations(): %}
+                                <li>PK debut : {{degat.get_pk_debut()}} - PK fin : {{degat.get_pk_fin()}} - Niveau : {{degat.get_niveau()}}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-6 map">
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+    <script charset="UTF-8">
+        {% if road != None : %}
+        
+            var geo = JSON.parse({{geoJSON|tojson}})
+            var map =  L.map('map').setView([{{longitude}}, {{latitude}}], 10);
+
+            var marker = L.marker([{{longitude}}, {{latitude}}]).addTo(map);
+            marker.bindPopup("<p>Route n° : {{road.get_linkno()}}</p>");
+
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+
+            var myStyle = {
+                "color" : "red",
+                "weight" : 2,
+                "opacity" : 0.5
+            };
+
+            L.geoJSON(geo, {
+                style : myStyle
+            }).addTo(map);
+
+            {% for i in range(nb_detruit): %}
+
+                var circle = L.circle([{{degraded_points[i][1]}}, {{degraded_points[i][0]}}], {
+                    color: 'yellow',
+                    fillColor: '#f03',
+                    opacity : 0.4,
+                    fillOpacity: 0.2,
+                    radius: {{degraded_points[i][2]}}
+                }).addTo(map);
+
+                circle.bindPopup("<p>Route Detruit : </br> <ul><li>PK debut : {{degats[i].get_pk_debut()}}</li><li>PK fin : {{degats[i].get_pk_fin()}}</li><li>Niveau : {{degats[i].get_niveau()}}</li></ul></p>");
+
+            {% endfor %}
+
+        {%endif%}
+    </script>
+</body>
+</html>
